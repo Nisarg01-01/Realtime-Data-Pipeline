@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 from streamlit_autorefresh import st_autorefresh
+from agent import create_db_agent, ask_agent
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -73,6 +74,22 @@ try:
     live_feed_df = run_query("SELECT event_time, event_type, brand, price FROM events ORDER BY event_time DESC LIMIT 10")
     st.dataframe(live_feed_df, use_container_width=True)
 
+    st.markdown("---")
+    st.header("🤖 SQL Agent for Insights")
+    st.write("Ask the SQL Agent for insights on your data.")
+
+    if "agent" not in st.session_state:
+        st.session_state.agent = create_db_agent()
+    
+    question = st.text_input("Enter your question: eg. 'What were the top 3 most purchased brands?'", key="agent_question")
+    
+    if st.button("Ask AI Analyst", key="agent_ask"):
+        if question:
+            with st.spinner("Getting insights..."):
+                answer = ask_agent(st.session_state.agent, question)
+                st.success(f"Answer: {answer}")
+    else:
+        st.warning("Please enter a question.")
 except Exception as e:
     st.error(f"An error occurred: {e}")
     st.info("Please ensure your data pipeline (consumer_spark.py) and Docker services are running.")
