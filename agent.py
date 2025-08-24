@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
-from langchain.agents import create_sql_agent
+from langchain_community.agent_toolkits.sql.base import create_sql_agent
 
 os.environ["GOOGLE_API_KEY"] = "AIzaSyBXoJDUz_msPYgbHOgMIVUtvaG2aq7HyVk"
 
