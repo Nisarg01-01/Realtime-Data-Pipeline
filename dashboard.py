@@ -7,7 +7,6 @@ import altair as alt
 
 st.set_page_config(
     page_title="E-Commerce Analytics Dashboard",
-    page_icon="🛒",
     layout="wide",
 )
 
@@ -22,7 +21,7 @@ def run_query(query):
     """Runs a SQL query using the SQLAlchemy engine."""
     return pd.read_sql(query, get_connection_engine())
 
-st.title("🛒 Real-Time E-Commerce Analytics")
+st.title("Real-Time E-Commerce Analytics")
 st_autorefresh(interval=15000, key="datarefresher")
 
 try:
@@ -36,9 +35,9 @@ try:
 
     st.header("Live Event Metrics")
     kpi1, kpi2, kpi3 = st.columns(3)
-    kpi1.metric(label="👀 Product Views", value=f"{total_views:,}")
-    kpi2.metric(label="🛒 Items Added to Cart", value=f"{total_carts:,}")
-    kpi3.metric(label="💳 Total Purchases", value=f"{total_purchases:,}")
+    kpi1.metric(label="Product Views", value=f"{total_views:,}")
+    kpi2.metric(label="Items Added to Cart", value=f"{total_carts:,}")
+    kpi3.metric(label="Total Purchases", value=f"{total_purchases:,}")
     st.markdown("---")
 
     st.header("User Session Analytics (from Aggregated Table)")
@@ -56,7 +55,7 @@ try:
 
     chart1, chart2 = st.columns(2)
     with chart1:
-        st.subheader("🛍️ Top 10 Purchased Brands")
+        st.subheader("Top 10 Purchased Brands")
         top_brands_df = run_query("""
             SELECT 
                 -- Capitalize the first letter of the brand name
@@ -71,7 +70,7 @@ try:
         st.bar_chart(top_brands_df.set_index('brand'))
 
     with chart2:
-        st.subheader("📦 Top 10 Purchased Products")
+        st.subheader("Top 10 Purchased Products")
         top_products_df = run_query("""
             SELECT 
                 -- Create a new, descriptive label
@@ -87,7 +86,7 @@ try:
         st.bar_chart(top_products_df.set_index('product_label'))
     st.markdown("---")
 
-    st.subheader("📊 Session Duration Distribution")
+    st.subheader("Session Duration Distribution")
     duration_df = run_query("""
         SELECT
             CASE
@@ -113,7 +112,7 @@ try:
 
     st.markdown("---")
 
-    st.header("🤖 AI Business Analyst")
+    st.header("AI Business Analyst")
     st.write("Ask a question about your data in plain English:")
 
     if 'agent' not in st.session_state:
