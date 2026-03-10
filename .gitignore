@@ -1,12 +1,66 @@
 # Ignore the Python virtual environment
 venv/
+env/
+.venv/
 
-# Ignore large data files
+# Ignore Conda environments
+conda-meta/
+*.conda
+
+# Ignore environment variables
+.env
+*.env
+!.env.example
+
+# Ignore large data files and directories
 *.csv
+Data/
+data/
+
+# Ignore Spark checkpoints and temporary files
+checkpoint/
+checkpoints/
+spark-warehouse/
+metastore_db/
+derby.log
+*.log
 
 # Ignore Python cache files
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
 
 # Ignore VS Code specific settings
 .vscode/
+.idea/
+
+# Ignore test and coverage files
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.tox/
+.hypothesis/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Ignore database files (if any local SQLite used)
+*.db
+*.sqlite
+*.sqlite3
