@@ -1,11 +1,6 @@
 # Real-Time E-Commerce Data Pipeline
 
-[![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/)
-[![PySpark](https://img.shields.io/badge/pyspark-3.5.0-orange)](https://spark.apache.org/)
-[![Throughput](https://img.shields.io/badge/throughput-59k%2Fsec-brightgreen)](TEST_RESULTS.md)
-[![Latency](https://img.shields.io/badge/latency-3.65ms-brightgreen)](TEST_RESULTS.md)
-
-Production-ready real-time analytics pipeline processing 100,000+ e-commerce events with sub-2ms latency. Implements event streaming (Kafka), distributed processing (Spark), and interactive visualization (Streamlit).
+A real-time analytics pipeline that processes 100,000+ e-commerce events with sub-2ms latency using Kafka, Spark, and Streamlit for visualization.
 
 ## Key Features
 
@@ -14,8 +9,8 @@ Production-ready real-time analytics pipeline processing 100,000+ e-commerce eve
 - **Reliable Messaging** - Apache Kafka with persistent event storage
 - **Live Analytics Dashboard** - Streamlit with real-time metrics and charts
 - **AI-Powered Queries** - LangChain integration for natural language database queries
-- **Automated Testing** - Comprehensive test suite with pytest
-- **Containerized Deployment** - Docker Compose for instant infrastructure setup
+- **Automated Testing** - Full test coverage with pytest
+- **Docker Support** - Easy setup with Docker Compose
 
 ## Quick Start
 
@@ -98,10 +93,10 @@ Production-grade performance metrics:
 
 | Metric | Result | Target | Status |
 |--------|--------|--------|--------|
-| Peak Throughput | 59,481 events/sec | 1,000 | 59.5x faster |
-| E2E Latency | 3.65ms | 1,500ms | 411x faster |
-| Data Quality | 98.00% | 95% | Exceeded |
-| Memory Leaks | +0.02MB/1000ops | <1MB | Excellent |
+| Peak Throughput | 59,481 events/sec |
+| E2E Latency | 3.65ms |
+| Data Quality | 98.00% |
+| Memory Overhead | +0.02MB/1000ops |
 
 
 For detailed performance analysis, see [TEST_RESULTS.md](TEST_RESULTS.md).
@@ -175,8 +170,8 @@ Realtime-Data-Pipeline/
 
 ## Documentation
 
-- **[SETUP.md](SETUP.md)** - Complete setup guide, manual instructions, extensive troubleshooting
-- **[TEST_RESULTS.md](TEST_RESULTS.md)** - Detailed performance metrics and test reports
+- **[SETUP.md](SETUP.md)** - Manual setup and troubleshooting guide
+- **[TEST_RESULTS.md](TEST_RESULTS.md)** - Performance test results and metrics
 
 ## Dataset
 
@@ -195,7 +190,7 @@ Required file: `Data/2019-Oct.csv` (download and place in the Data directory)
 ### Problem: "ModuleNotFoundError: No module named 'pyspark'"
 **Solution:** Activate environment: `conda activate realtime-pipeline`
 
-For comprehensive troubleshooting, see [SETUP.md - Common Issues & Solutions](SETUP.md#common-issues--solutions).
+For troubleshooting, see [SETUP.md - Common Issues & Solutions](SETUP.md#common-issues--solutions).
 
 ## Development
 
@@ -221,15 +216,11 @@ pytest tests/ -v
 4. Run tests: `pytest tests/ -v`
 5. Submit pull request
 
-## License
-
-[Add appropriate license]
-
 ## Support & Questions
 
-For detailed information, troubleshooting, and advanced configuration:
-- See [SETUP.md](SETUP.md) for comprehensive guide
-- See [TEST_RESULTS.md](TEST_RESULTS.md) for performance details
+For more help:
+- Check [SETUP.md](SETUP.md) for detailed setup and troubleshooting
+- See [TEST_RESULTS.md](TEST_RESULTS.md) for performance metrics
 - Run `python health_check.py` to verify system health
 
 ---

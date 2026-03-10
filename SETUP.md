@@ -1,6 +1,6 @@
 # Setup Instructions & Troubleshooting
 
-Complete reference for manual setup, configuration, and troubleshooting.
+Manual setup and troubleshooting guide if the automated script doesn't work for you.
 
 ## Table of Contents
 
