@@ -1,9 +1,13 @@
+import os
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 from streamlit_autorefresh import st_autorefresh
 from agent import create_db_agent, ask_agent
 import altair as alt
+from dotenv import load_dotenv
+
+load_dotenv()
 
 st.set_page_config(
     page_title="E-Commerce Analytics Dashboard",
@@ -12,26 +16,46 @@ st.set_page_config(
 
 @st.cache_resource
 def get_connection_engine():
-    """Creates a SQLAlchemy engine to connect to PostgreSQL."""
-    db_url = "postgresql://user:password@localhost:5432/ecommerce"
-    return create_engine(db_url)
+    """Creates a SQLAlchemy engine with optimized connection pooling."""
+    db_user = os.getenv("DB_USER", "user")
+    db_password = os.getenv("DB_PASSWORD", "password")
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_port = os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("DB_NAME", "ecommerce")
+    db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    # Performance: Add connection pooling
+    return create_engine(
+        db_url,
+        pool_size=3,
+        max_overflow=5,
+        pool_pre_ping=True,
+        pool_recycle=3600,
+        echo=False
+    )
 
 @st.cache_data(ttl=10)
 def run_query(query):
-    """Runs a SQL query using the SQLAlchemy engine."""
-    return pd.read_sql(query, get_connection_engine())
+    """Runs a SQL query using the SQLAlchemy engine with connection reuse."""
+    with get_connection_engine().connect() as conn:
+        return pd.read_sql(query, conn)
 
 st.title("Real-Time E-Commerce Analytics")
-st_autorefresh(interval=15000, key="datarefresher")
+refresh_interval = int(os.getenv("DASHBOARD_REFRESH_INTERVAL", "15000"))
+st_autorefresh(interval=refresh_interval, key="datarefresher")
 
 try:
-    views_df = run_query("SELECT COUNT(*) as views FROM events WHERE event_type = 'view'")
-    carts_df = run_query("SELECT COUNT(*) as carts FROM events WHERE event_type = 'cart'")
-    purchases_df = run_query("SELECT COUNT(*) as purchases FROM events WHERE event_type = 'purchase'")
-
-    total_views = views_df['views'][0]
-    total_carts = carts_df['carts'][0]
-    total_purchases = purchases_df['purchases'][0]
+    # Performance: Combine queries where possible to reduce round trips
+    metrics_df = run_query("""
+        SELECT 
+            COUNT(*) FILTER (WHERE event_type = 'view') as views,
+            COUNT(*) FILTER (WHERE event_type = 'cart') as carts,
+            COUNT(*) FILTER (WHERE event_type = 'purchase') as purchases
+        FROM events
+    """)
+    
+    total_views = metrics_df['views'][0]
+    total_carts = metrics_df['carts'][0]
+    total_purchases = metrics_df['purchases'][0]
 
     st.header("Live Event Metrics")
     kpi1, kpi2, kpi3 = st.columns(3)
@@ -115,18 +139,43 @@ try:
     st.header("AI Business Analyst")
     st.write("Ask a question about your data in plain English:")
 
+    # Initialize agent with error handling
     if 'agent' not in st.session_state:
-        st.session_state.agent = create_db_agent()
+        try:
+            st.session_state.agent = create_db_agent()
+            st.session_state.agent_error = None
+        except Exception as e:
+            st.session_state.agent = None
+            st.session_state.agent_error = str(e)
 
-    question = st.text_input("e.g., 'What are the top 5 most viewed products?'", key="agent_question")
+    # Check if agent is available
+    if st.session_state.agent is None:
+        st.error("⚠️ AI Analyst unavailable: Google API key has been suspended or is invalid.")
+        st.info("""
+        **To enable AI Analyst:**
+        1. Get a new Google API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+        2. Update your `.env` file: `GOOGLE_API_KEY=your-new-key-here`
+        3. Restart the dashboard
+        
+        **The rest of the dashboard works fine without AI!** 📊
+        """)
+    else:
+        question = st.text_input("e.g., 'What are the top 5 most viewed products?'", key="agent_question")
 
-    if st.button("Ask AI Analyst"):
-        if question:
-            with st.spinner("The AI Analyst is thinking..."):
-                answer = ask_agent(st.session_state.agent, question)
-                st.success(answer)
-        else:
-            st.warning("Please enter a question.")
+        if st.button("Ask AI Analyst"):
+            if question:
+                with st.spinner("The AI Analyst is thinking..."):
+                    try:
+                        answer = ask_agent(st.session_state.agent, question)
+                        st.success(answer)
+                    except Exception as e:
+                        if "CONSUMER_SUSPENDED" in str(e) or "Permission denied" in str(e):
+                            st.error("⚠️ Google API key has been suspended. Please update your API key in `.env` file.")
+                            st.session_state.agent = None  # Mark agent as unavailable
+                        else:
+                            st.error(f"Error: {e}")
+            else:
+                st.warning("Please enter a question.")
 
 except Exception as e:
     st.error(f"An error occurred: {e}")

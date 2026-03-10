@@ -1,20 +1,39 @@
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import from_json, col, trim, to_timestamp
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def write_batch_to_postgres(batch_df, epoch_id):
     """
     This function is called for each micro-batch.
-    It writes the DataFrame to a PostgreSQL table.
+    It writes the DataFrame to a PostgreSQL table with optimizations.
     """
-    print(f"--- Writing batch {epoch_id} to PostgreSQL ---")
+    if batch_df.isEmpty():
+        print(f"--- Batch {epoch_id}: No data to write ---")
+        return
+        
+    record_count = batch_df.count()
+    print(f"--- Processing batch {epoch_id}: {record_count} records ---")
     
-    # Define PostgreSQL connection properties
-    postgres_url = "jdbc:postgresql://localhost:5432/ecommerce"
+    # Define PostgreSQL connection properties from environment
+    db_user = os.getenv("DB_USER", "user")
+    db_password = os.getenv("DB_PASSWORD", "password")
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_port = os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("DB_NAME", "ecommerce")
+    
+    postgres_url = f"jdbc:postgresql://{db_host}:{db_port}/{db_name}"
     postgres_properties = {
-        "user": "user",
-        "password": "password",
-        "driver": "org.postgresql.Driver"
+        "user": db_user,
+        "password": db_password,
+        "driver": "org.postgresql.Driver",
+        # Performance optimizations
+        "batchsize": "1000",  # Insert 1000 rows per batch
+        "isolationLevel": "READ_UNCOMMITTED",  # Faster writes
+        "reWriteBatchedInserts": "true"  # PostgreSQL optimization
     }
 
     # Write the DataFrame to the 'events' table, appending new data
@@ -24,12 +43,19 @@ def write_batch_to_postgres(batch_df, epoch_id):
         mode="append",
         properties=postgres_properties
     )
-    print(f"--- Batch {epoch_id} successfully written ---")
+    print(f"--- Batch {epoch_id}: {record_count} records written successfully ---")
 
 def main():
     spark = SparkSession.builder \
         .appName("ECommerceStreamConsumer") \
+        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.postgresql:postgresql:42.7.1") \
         .config("spark.driver.host", "127.0.0.1") \
+        .config("spark.sql.shuffle.partitions", "4") \
+        .config("spark.streaming.kafka.maxRatePerPartition", "1000") \
+        .config("spark.sql.streaming.checkpointLocation", "./checkpoint") \
+        .config("spark.executor.memory", "2g") \
+        .config("spark.driver.memory", "1g") \
+        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
         .getOrCreate()
 
     spark.sparkContext.setLogLevel("WARN")
@@ -47,12 +73,17 @@ def main():
         StructField("user_session", StringType(), True)
     ])
 
-    # Read from Kafka
+    # Read from Kafka with optimized configuration
+    kafka_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    kafka_topic = os.getenv("KAFKA_TOPIC", "ecommerce_events")
+    
     kafka_df = spark.readStream \
         .format("kafka") \
-        .option("kafka.bootstrap.servers", "localhost:9092") \
-        .option("subscribe", "ecommerce_events") \
+        .option("kafka.bootstrap.servers", kafka_servers) \
+        .option("subscribe", kafka_topic) \
         .option("startingOffsets", "earliest") \
+        .option("maxOffsetsPerTrigger", "10000") \
+        .option("failOnDataLoss", "false") \
         .load()
 
     # Parse and clean the data

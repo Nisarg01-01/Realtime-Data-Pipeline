@@ -1,12 +1,31 @@
 # build_aggregates.py
+import os
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+import time
+
+load_dotenv()
 
 def main():
-
+    db_user = os.getenv("DB_USER", "user")
+    db_password = os.getenv("DB_PASSWORD", "password")
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_port = os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("DB_NAME", "ecommerce")
+    
     print("Connecting to the PostgreSQL database...")
-    db_url = "postgresql://user:password@localhost:5432/ecommerce"
-    engine = create_engine(db_url)
+    db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    # Performance: Add connection pooling and optimizations
+    engine = create_engine(
+        db_url,
+        pool_size=5,
+        max_overflow=10,
+        pool_pre_ping=True,
+        echo=False
+    )
+    
+    start_time = time.time()
 
     sessionization_query = """
     WITH session_events AS (
@@ -60,20 +79,32 @@ def main():
 
     print("Running advanced SQL query to build session summary...")
     # Execute the query and store the result in a Pandas DataFrame
-    summary_df = pd.read_sql(sessionization_query, engine)
-
-    print(f"Successfully aggregated {len(summary_df)} sessions.")
+    # Performance: Use connection directly for better control
+    with engine.connect() as conn:
+        summary_df = pd.read_sql(sessionization_query, conn)
+    
+    query_time = time.time() - start_time
+    print(f"Query completed in {query_time:.2f}s. Aggregated {len(summary_df)} sessions.")
 
     # Write the aggregated data to a new table in PostgreSQL
-    print("Writing summary data to new table 'user_session_summary'...")
+    print("Writing summary data to table 'user_session_summary'...")
+    write_start = time.time()
+    
+    # Performance: Use method='multi' for faster bulk inserts
     summary_df.to_sql(
         'user_session_summary',
         engine,
-        if_exists='replace', # 'replace' will drop the table if it exists and create a new one
-        index=False
+        if_exists='replace',  # 'replace' will drop the table if it exists and create a new one
+        index=False,
+        method='multi',  # Faster bulk insert
+        chunksize=1000  # Insert in chunks of 1000 rows
     )
-
-    print("--- Aggregation build complete! ---")
+    
+    write_time = time.time() - write_start
+    total_time = time.time() - start_time
+    print(f"Write completed in {write_time:.2f}s")
+    print(f"\n--- Aggregation complete in {total_time:.2f}s! ---")
+    print(f"Performance: {len(summary_df)/total_time:.0f} sessions/sec")
     print("\n--- Sample of the new summary table: ---")
     print(summary_df.head())
 

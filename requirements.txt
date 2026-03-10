@@ -35,7 +35,8 @@ jsonpatch==1.33
 jsonpointer==3.0.0
 jsonschema==4.25.0
 jsonschema-specifications==2025.4.1
-kafka-python==2.2.15
+kafka-python==2.3.0
+python-snappy==0.7.3
 langchain==0.3.27
 langchain-community==0.3.27
 langchain-core==0.3.72
@@ -58,6 +59,7 @@ propcache==0.3.2
 proto-plus==1.26.1
 protobuf==6.31.1
 psycopg2-binary==2.9.10
+psutil==6.1.1
 py4j==0.10.9.7
 pyarrow==21.0.0
 pyasn1==0.6.1
@@ -67,6 +69,7 @@ pydantic-settings==2.10.1
 pydantic_core==2.33.2
 pydeck==0.9.1
 pyspark==3.5.0
+pytest==8.2.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 pytz==2025.2
